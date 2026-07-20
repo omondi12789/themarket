@@ -29,6 +29,8 @@ def sortino_ratio(returns: pd.Series, risk_free_rate: float = 0.0, periods_per_y
     if len(excess) == 0:
         return 0.0
     downside = excess[excess < 0]
+    if len(downside) == 0:
+        return float("inf") if excess.mean() > 0 else 0.0
     downside_std = downside.std(ddof=0)
     if np.isnan(downside_std) or downside_std == 0:
         return 0.0
