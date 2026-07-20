@@ -15,7 +15,7 @@ services:
       - key: DATABASE_READ_REPLICA_URL
         value: postgresql://themarket_db_user:087ITKnrQYoh30dbieckt2ZhLzFLOhfZ@dpg-d9f1pournols73f82qeg-a.oregon-postgres.render.com/themarket_db
       - key: REDIS_URL
-        value: redis://localhost:6379/0
+        value: rediss://default:gQAAAAAAAqHvAAIgcDFhMzg5NTQ3ODIwYTA0M2ZmOTNhM2NmNTI5YjhlZDdiNQ@adequate-calf-172527.upstash.io:6379
       - key: JWT_SECRET
         value: dev-secret-change-me
       - key: JWT_REFRESH_SECRET
