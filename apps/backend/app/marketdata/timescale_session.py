@@ -17,12 +17,32 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
+
+def _build_timescale_url() -> str | None:
+    """Return a usable TimescaleDB URL when available; otherwise skip initialization."""
+    if not settings.database_url:
+        return None
+    try:
+        url = settings.database_url.replace("@postgres:", "@timescaledb:").replace("/forex", "/forex_ticks")
+        if url.startswith("postgresql://"):
+            return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return url
+    except Exception:
+        return None
+
+
 # Reuses the same asyncpg driver as the main DB; points at the timescaledb service.
-timescale_engine = create_async_engine(
-    settings.database_url.replace("@postgres:", "@timescaledb:").replace("/forex", "/forex_ticks"),
-    pool_pre_ping=True,
+_timescale_url = _build_timescale_url()
+timescale_engine = (
+    create_async_engine(_timescale_url, pool_pre_ping=True)
+    if _timescale_url
+    else None
 )
-TimescaleSessionLocal = async_sessionmaker(timescale_engine, expire_on_commit=False, class_=AsyncSession)
+TimescaleSessionLocal = (
+    async_sessionmaker(timescale_engine, expire_on_commit=False, class_=AsyncSession)
+    if timescale_engine is not None
+    else None
+)
 
 
 class TimescaleBase(DeclarativeBase):
@@ -30,5 +50,7 @@ class TimescaleBase(DeclarativeBase):
 
 
 async def get_timescale_db() -> AsyncGenerator[AsyncSession, None]:
+    if TimescaleSessionLocal is None:
+        raise RuntimeError("TimescaleDB is not configured")
     async with TimescaleSessionLocal() as session:
         yield session

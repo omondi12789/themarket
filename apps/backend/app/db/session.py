@@ -7,6 +7,14 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
+
+def normalize_database_url(url: str) -> str:
+    """Ensure SQLAlchemy uses the asyncpg driver for PostgreSQL URLs."""
+    if url.startswith("postgresql://") and "+asyncpg" not in url and "+psycopg" not in url:
+        return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return url
+
+
 # Pool tuning for production concurrency: pool_size is the number of persistent
 # connections kept open per worker process; max_overflow allows temporary bursts
 # above that under load spikes (see infra/loadtest for the tool that tells you
@@ -14,7 +22,7 @@ settings = get_settings()
 # holding connections open longer than most managed Postgres providers' idle-connection
 # timeout (RDS defaults vary; 30 min is a safe conservative value).
 engine = create_async_engine(
-    settings.database_url,
+    normalize_database_url(settings.database_url),
     pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,
@@ -30,7 +38,13 @@ AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=As
 # deployments — nothing breaks, you just don't get the read/write split.
 _read_replica_url = getattr(settings, "database_read_replica_url", None)
 read_engine = (
-    create_async_engine(_read_replica_url, pool_pre_ping=True, pool_size=10, max_overflow=20, pool_recycle=1800)
+    create_async_engine(
+        normalize_database_url(_read_replica_url),
+        pool_pre_ping=True,
+        pool_size=10,
+        max_overflow=20,
+        pool_recycle=1800,
+    )
     if _read_replica_url
     else engine
 )

@@ -13,8 +13,8 @@ from __future__ import annotations
 
 import time
 
+import redis
 from fastapi import Request, Response, status
-from redis.asyncio import Redis
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
@@ -26,12 +26,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.requests_per_window = requests_per_window
         self.window_seconds = window_seconds
-        self._redis: Redis | None = None
+        self._redis: redis.Redis | None = None
 
-    def _get_redis(self) -> Redis:
+    def _get_redis(self) -> redis.Redis:
         if self._redis is None:
             settings = get_settings()
-            self._redis = Redis.from_url(settings.redis_url)
+            self._redis = redis.Redis.from_url(settings.redis_url)
         return self._redis
 
     async def dispatch(self, request: Request, call_next):
@@ -47,13 +47,13 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         key = f"ratelimit:{'auth' if is_auth_endpoint else 'api'}:{client_ip}"
 
         try:
-            redis = self._get_redis()
-            current = await redis.incr(key)
+            redis_client = self._get_redis()
+            current = redis_client.incr(key)
             if current == 1:
-                await redis.expire(key, window)
+                redis_client.expire(key, window)
 
             if current > limit:
-                ttl = await redis.ttl(key)
+                ttl = redis_client.ttl(key)
                 return JSONResponse(
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                     content={"detail": "rate limit exceeded", "retry_after_seconds": max(ttl, 1)},

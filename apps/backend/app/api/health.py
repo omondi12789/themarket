@@ -1,5 +1,5 @@
+import redis
 from fastapi import APIRouter, Depends
-from redis.asyncio import Redis
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,9 +21,9 @@ async def health(db: AsyncSession = Depends(get_db)) -> dict:
 
     redis_ok = True
     try:
-        r = Redis.from_url(settings.redis_url)
-        await r.ping()
-        await r.aclose()
+        r = redis.Redis.from_url(settings.redis_url)
+        r.ping()
+        r.close()
     except Exception:
         redis_ok = False
 

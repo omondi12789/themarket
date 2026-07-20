@@ -4,6 +4,7 @@ pydantic[email]==2.9.2
 pydantic-settings==2.5.2
 sqlalchemy[asyncio]==2.0.35
 asyncpg==0.29.0
+psycopg2-binary==2.9.9
 alembic==1.13.3
 redis==5.0.8
 celery==5.4.0
@@ -14,8 +15,8 @@ cryptography==43.0.1
 prometheus-client==0.21.0
 hvac==2.3.0
 python-multipart==0.0.9
-httpx==0.27.2
+httpx==0.27.0
 
 # Broker connectivity — see docs/broker-comparison.md
-metaapi-cloud-sdk==26.0.0
+metaapi-cloud-sdk==27.1.1
 # MetaTrader5==5.0.45  # Windows-only; uncomment when deploying on a Windows host/VPS
